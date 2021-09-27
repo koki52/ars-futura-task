@@ -1,0 +1,26 @@
+{
+  "name": "devops-task",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "npx sequelize-cli db:migrate && npx sequelize db:seed:all && node ./bin/www",
+    "dev": "npx sequelize-cli db:migrate && npx sequelize db:seed:all --debug && nodemon ./bin/www"
+  },
+  "dependencies": {
+    "cookie-parser": "~1.4.4",
+    "debug": "~2.6.9",
+    "dotenv": "^10.0.0",
+    "express": "~4.16.1",
+    "http-errors": "~1.6.3",
+    "morgan": "~1.9.1",
+    "pg": "^8.6.0",
+    "pg-hstore": "^2.3.4",
+    "pug": "2.0.0-beta11",
+    "sequelize": "^6.6.2",
+    "typeorm": "^0.2.34"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.7",
+    "sequelize-cli": "^6.2.0"
+  }
+}
