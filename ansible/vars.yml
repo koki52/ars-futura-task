@@ -1,0 +1,5 @@
+ssh_users:
+- name: mkostelac
+  key: "https://github.com/koki52.keys"
+- name: bmijac
+  key: "https://github.com/bmijac.keys"

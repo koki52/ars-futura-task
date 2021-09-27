@@ -1,0 +1,28 @@
+---
+- name: Server setup
+  hosts: webserver
+  become: true
+  vars_files:
+  - vars.yml
+  collections:
+  - community.general.ssh_config
+  - ansible.posix.authorized_key
+  tasks:
+  - name: Install packages
+    apt:
+      pkg:
+      - nginx
+      - nodejs
+      - postgresql
+  - name: Create users
+    ansible.builtin.user:
+      name: "{{ item.name }}"
+      password: "{{ 'ChangeMe123' | password_hash('sha512', 'mysecretsalt') }}"
+      groups: "sudo"
+      shell: "/bin/bash"
+    loop: "{{ ssh_users }}"
+  - name: Add ssh keys
+    ansible.posix.authorized_key:
+      user: "{{ item.name }}"
+      key: "{{ item.key }}"
+    loop: "{{ ssh_users }}"
