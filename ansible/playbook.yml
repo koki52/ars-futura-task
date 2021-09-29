@@ -4,25 +4,123 @@
   become: true
   vars_files:
   - vars.yml
+  - vault.yml
   collections:
   - community.general.ssh_config
+  - community.general.npm
+  - community.general.ufw
+  - community.general.snap
+  - community.general.htpasswd
   - ansible.posix.authorized_key
   tasks:
   - name: Install packages
-    apt:
+    ansible.builtin.apt:
       pkg:
       - nginx
       - nodejs
+      - npm
       - postgresql
+      - snapd
+      - python3-pip
+      - python3-passlib
+      - git
+  - name: Install certbot using snap
+    community.general.snap:
+      classic: true
+      name: certbot
+  - name: Install PM2 using npm
+    community.general.npm:
+      global: yes
+      name: pm2
+  - name: Install psycopg2 using pip
+    ansible.builtin.pip:
+      name: psycopg2-binary
   - name: Create users
     ansible.builtin.user:
       name: "{{ item.name }}"
-      password: "{{ 'ChangeMe123' | password_hash('sha512', 'mysecretsalt') }}"
+      password: "{{ default_password | password_hash('sha512', 'mysecretsalt') }}"
       groups: "sudo"
       shell: "/bin/bash"
+      update_password: "on_create"
     loop: "{{ ssh_users }}"
   - name: Add ssh keys
     ansible.posix.authorized_key:
       user: "{{ item.name }}"
       key: "{{ item.key }}"
     loop: "{{ ssh_users }}"
+  - name: Configure UFW
+    community.general.ufw:
+      rule: allow
+      port: "{{ item }}"
+      proto: tcp
+    loop:
+    - 22
+    - 80
+    - 443
+  - name: Enable UFW
+    community.general.ufw:
+      state: enabled
+  - name: SSH config
+    ansible.builtin.lineinfile:
+      path: /etc/ssh/sshd_config
+      state: present
+      line: "{{ item }}"
+    notify:
+    - Restart sshd
+    loop:
+    - "PasswordAuthentication no"
+    - "PermitRootLogin no"
+  - name: Create htpasswd file
+    community.general.htpasswd:
+      path: /etc/nginx/.htpasswd
+      name: "{{ item.name }}"
+      password: "{{ default_password }}"
+      owner: root
+      group: root
+      mode: "0644"
+    loop: "{{ htpasswd_users }}"
+  - name: Configure nginx
+    ansible.builtin.copy:
+      src: files/nginx.conf
+      dest: /etc/nginx/nginx.conf
+      backup: yes
+    notify:
+    - Reload nginx
+  - name: Create PostgreSQL database
+    community.postgresql.postgresql_db:
+      name: "{{ db_name }}"
+      login_host: 127.0.0.1
+      login_user: "{{ db_username }}"
+      login_password: "{{ db_password }}"
+  - name: Create app directory
+    ansible.builtin.file:
+      path: /app
+      state: directory
+      mode: "0755"
+  - name: Clone repository
+    ansible.builtin.git:
+      repo: "https://github.com/koki52/ars-futura-task.git"
+      dest: "/app"
+      force: yes
+  - name: Copy pm2 config
+    ansible.builtin.template:
+      src: files/ecosystem.config.js.j2
+      dest: /app/devops-task/ecosystem.config.js
+  - name: Build app
+    ansible.builtin.shell: |
+      cd /app/devops-task
+      npm install
+  - name: Configure app startup using pm2
+    ansible.builtin.shell: |
+      pm2 start /app/devops-task/ecosystem.config.js
+      pm2 startup
+      pm2 save
+  handlers:
+  - name: Restart sshd
+    ansible.builtin.service:
+      name: sshd
+      state: restarted
+  - name: Reload nginx
+    ansible.builtin.service:
+      name: nginx
+      state: reloaded

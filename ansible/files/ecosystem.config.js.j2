@@ -1,0 +1,17 @@
+module.exports = {
+  apps : [{
+    name: "devops-task",
+    script: "npm start",
+    cwd: "/app/devops-task/",
+    env: {
+      DB_USERNAME: "{{ db_username }}",
+      DB_PASSWORD: "{{ db_password }}",
+      DB_DATABASE: "{{ db_name }}",
+      DB_HOST: "127.0.0.1",
+      DB_PORT: "5432",
+    },
+    env_production: {
+      NODE_ENV: "production",
+    }
+  }]
+}
