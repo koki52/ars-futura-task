@@ -13,8 +13,8 @@ jobs:
           chmod 600 ~/.ssh/staging.key
           cat >>~/.ssh/config <<END
           Host production
-            HostName $SSH_HOST
-            User $SSH_USER
+            HostName devops-task.arsfutura.com
+            User mkostelac
             IdentityFile ~/.ssh/staging.key
             StrictHostKeyChecking no
           END
@@ -27,12 +27,12 @@ jobs:
         run: ssh production 'sudo pm2 stop devops-task'
 
       - name: Check out the source
-        run: ssh production 'cd /app && sudo git fetch && sudo git reset --hard origin/master'
+        run: ssh production 'cd /app && sudo git fetch && sudo git reset --hard origin/main'
 
       - name: Build
         run: ssh production 'cd /app/devops-task && sudo npm install'
 
       - name: Start the server
         if: ${{ always() }}
-        run: ssh production 'sudo pm2 start my-application'
+        run: ssh production 'sudo pm2 start devops-task'
 
