@@ -11,6 +11,8 @@
   - community.general.ufw
   - community.general.snap
   - community.general.htpasswd
+  - community.postgresql.postgresql_user
+  - community.postgresql.postgresql_db
   - ansible.posix.authorized_key
   tasks:
   - name: Install packages
@@ -24,6 +26,7 @@
       - python3-pip
       - python3-passlib
       - git
+      - acl
   - name: Install certbot using snap
     community.general.snap:
       classic: true
@@ -82,16 +85,33 @@
   - name: Configure nginx
     ansible.builtin.copy:
       src: files/nginx.conf
-      dest: /etc/nginx/nginx.conf
+      dest: /etc/nginx/sites-available/devops-task.arsfutura.com
       backup: yes
+  - name: Enable nginx site
+    ansible.builtin.file:
+      src: /etc/nginx/sites-available/devops-task.arsfutura.com
+      dest: /etc/nginx/sites-enabled/devops-task.arsfutura.com
+      state: link
     notify:
     - Reload nginx
+  - name: Install certificate using certbot
+    ansible.builtin.shell: |
+      certbot --nginx -d devops-task.arsfutura.com --agree-tos -m kostelac.marin@gmail.com -n
   - name: Create PostgreSQL database
     community.postgresql.postgresql_db:
       name: "{{ db_name }}"
-      login_host: 127.0.0.1
-      login_user: "{{ db_username }}"
-      login_password: "{{ db_password }}"
+    become: yes
+    become_user: postgres
+    become_method: sudo
+  - name: Create PostgreSQL user
+    community.postgresql.postgresql_user:
+      db: "{{ db_name }}"
+      name: "{{ db_username }}"
+      password: "{{ db_password }}"
+      priv: "ALL"
+    become: yes
+    become_user: postgres
+    become_method: sudo
   - name: Create app directory
     ansible.builtin.file:
       path: /app
