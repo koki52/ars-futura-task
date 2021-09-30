@@ -14,7 +14,7 @@ jobs:
           chmod 600 ~/.ssh/staging.key
           cat >>~/.ssh/config <<END
           Host production
-            HostName $HOST_IP
+            HostName $SSH_HOST
             User $SSH_USER
             IdentityFile ~/.ssh/staging.key
             StrictHostKeyChecking no
