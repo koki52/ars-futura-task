@@ -4,6 +4,7 @@ jobs:
   deploy:
     name: "Deploy to production"
     runs-on: ubuntu-latest
+    environment: production
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: Configure SSH
@@ -13,8 +14,8 @@ jobs:
           chmod 600 ~/.ssh/staging.key
           cat >>~/.ssh/config <<END
           Host production
-            HostName devops-task.arsfutura.com
-            User mkostelac
+            HostName $HOST_IP
+            User $SSH_USER
             IdentityFile ~/.ssh/staging.key
             StrictHostKeyChecking no
           END
