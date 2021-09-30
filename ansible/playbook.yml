@@ -46,6 +46,12 @@
       shell: "/bin/bash"
       update_password: "on_create"
     loop: "{{ ssh_users }}"
+  - name: Enable passwordless sudo
+    ansible.builtin.lineinfile:
+      path: /etc/sudoers
+      regexp: '^%sudo'
+      line: '%sudo ALL=(ALL) NOPASSWD: ALL'
+      validate: 'visudo -cf %s'
   - name: Add ssh keys
     ansible.posix.authorized_key:
       user: "{{ item.name }}"

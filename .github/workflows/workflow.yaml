@@ -1,0 +1,38 @@
+name: Deploy
+on: [push, pull_request]
+jobs:
+  deploy:
+    name: "Deploy to production"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh/
+          echo "$SSH_KEY" > ~/.ssh/staging.key
+          chmod 600 ~/.ssh/staging.key
+          cat >>~/.ssh/config <<END
+          Host production
+            HostName $SSH_HOST
+            User $SSH_USER
+            IdentityFile ~/.ssh/staging.key
+            StrictHostKeyChecking no
+          END
+        env:
+          SSH_USER: ${{ secrets.SSH_USERNAME }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_HOST: ${{ secrets.HOST_IP }}
+
+      - name: Stop the application
+        run: ssh production 'sudo pm2 stop devops-task'
+
+      - name: Check out the source
+        run: ssh production 'cd /app && sudo git fetch && sudo git reset --hard origin/master'
+
+      - name: Build
+        run: ssh production 'cd /app/devops-task && sudo npm install'
+
+      - name: Start the server
+        if: ${{ always() }}
+        run: ssh production 'sudo pm2 start my-application'
+
