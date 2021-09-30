@@ -50,10 +50,10 @@ As the configuration for accessing the server is sensitive, it is kept in encryp
 # Running the playbook
 When the preconditions are met, the playbook can be run using the following command:
 ```
-ansible-playbook -i inventory.ini --private-key $PRIVATE_KEY_FILE -u $REMOTE_USER --ask-vault-pass playbook.yml
+ansible-playbook -i inventory.ini --private-key $PRIVATE_KEY_FILE -u $REMOTE_USER --ask-vault-pass --ask-become-pass playbook.yml
 ```
 
-Private key and remote user parameters can be removed if they are modified in the inventory file. The playbook will start by asking for the vault pass, and the private key passphrase, if necessary.
+Private key and remote user parameters can be removed if they are modified in the inventory file. Become pass parameter can be removed if it is modified in the vault. The playbook will start by asking for the vault pass, become pass, and the private key passphrase, if necessary.
 
 # Possible improvements
 The application is run under the root user, which is not secure. If another user were set up to run the application, it would also allow to require passwords when running sudo commands on the server, due to sudo hopefully not being required for deploying updates.
